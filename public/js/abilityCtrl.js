@@ -224,15 +224,16 @@ var _abilityCtrl = function(isItem) {
 					];
 				} */
 				
+				var path = globalContent.project.replace(/game/g, "content")
 				if (isItem) {
 					_iconCache[textureName] = [
-						globalContent.project + "/resource/flash3/images/items/" + textureName.replace(/^item_/, "") + ".png",
+						path + "/panorama/images/items/" + textureName.replace(/^item_/, "") + ".png",
 						AppVersionSrv.resPath + "res/items/" + textureName.replace(/^item_/, "") + ".png",
 						'public/img/none_item.png'
 					];
 				} else {
 					_iconCache[textureName] = [
-						globalContent.project + "/resource/flash3/images/spellicons/" + textureName + ".png",
+						path + "/panorama/images/spellicons/" + textureName + ".png",
 						AppVersionSrv.resPath + "res/spellicons/" + textureName + ".png",
 						'public/img/logo.jpg'
 					];
