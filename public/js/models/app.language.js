@@ -13,10 +13,14 @@ app.factory("Language", function($q, KV, NODE, Locale) {
 		_my.ready = false;
 		_my._promise = _deferred.promise;
 
-		NODE.loadFile(Language.folderPath + "/" + fileName, "ucs2").then(function(data) {
+		NODE.loadFile(Language.folderPath + "/" + fileName, "utf8").then(function(data) {
 			try {
 				var _infoObj = {};
-				var _kv = KV.parse(data.substr(1), _infoObj);
+				if(data.charCodeAt(0) === 0xFEFF){
+					data = data.substr(1);
+				}
+				
+				var _kv = KV.parse(data, _infoObj);
 
 				_my.name = _kv.get("Language", false);
 				_my.kv = _kv.getKV("Tokens", false);

@@ -141,8 +141,12 @@ app.factory("Operation", function(KV, Sound, AppFileSrv, globalContent) {
 
 		match = match.slice(1);
 		var _list =  $.map(_match_AbilitySpecial.ability.getSpecialList(), function(kv) {
-			if((kv.value[1].key || "").toUpperCase().indexOf(match) !== -1) {
+			/* if((kv.value[1].key || "").toUpperCase().indexOf(match) !== -1) {
 				return {value: "%" + kv.value[1].key};
+			} */
+			
+			if((kv.key || "").toUpperCase().indexOf(match) !== -1) {
+				return {value: "%" + kv.key};
 			}
 		});
 		return _list;

@@ -32,6 +32,13 @@ var _unitCtrl = function(isHero) {
 		// ================================================================
 		$scope.setAbility = function (ability) {
 			$scope.ability = ability;
+			if($scope.ability) {
+				if(isHero) {
+					window._currentHero = $scope.ability._name;
+				} else {
+					window._currentUnit = $scope.ability._name;
+				}
+			}
 		};
 
 		// ==========> New
@@ -191,6 +198,7 @@ var _unitCtrl = function(isHero) {
 				});
 
 				globalContent[_globalListKey] = $scope.abilityList;
+				globalContent[_globalListKey+"_base"] = _kv.base
 				$scope.setAbility($scope.abilityList[0]);
 
 				setTimeout(function () {
@@ -206,7 +214,11 @@ var _unitCtrl = function(isHero) {
 			});
 		} else {
 			$scope.abilityList = globalContent[_globalListKey];
-			$scope.setAbility($scope.abilityList[0]);
+			
+			var _currentAbility = common.array.find(isHero ? window._currentHero : window._currentUnit, $scope.abilityList, "_name");
+
+			$scope.setAbility(_currentAbility ? _currentAbility : $scope.abilityList[0]);
+			
 			$scope.ready = true;
 		}
 
@@ -303,7 +315,16 @@ var _unitCtrl = function(isHero) {
 		$scope.setAbilityMouseDown = function (ability) {
 			$scope.setAbility(ability);
 		};
-
+		//双击单位名称的时候，定位树节点
+		$scope.dblclick_locate = function(ability){
+			if(ability){
+				var targetDiv = $("#"+ability._name);
+				var parentDiv = $("#listCntr");
+				if(targetDiv && targetDiv.offset() && parentDiv.offset()){
+					parentDiv.scrollTop(targetDiv.offset().top - parentDiv.offset().top + parentDiv.scrollTop())
+				}
+			}
+		}
 		// List Container layout
 		var winWidth;
 		$(window).on("resize.abilityList", function () {
@@ -350,6 +371,65 @@ var _unitCtrl = function(isHero) {
 			e.preventDefault();
 			return false;
 		});
+		
+		// ================================================================
+		// =                            Search                            =
+		// ================================================================
+		$scope.searchBox = false;
+
+		$scope.searchPress = function($event) {
+			if($event.which === 27) {//Esc
+				$scope.searchBox = false;
+			}
+		};
+
+		$scope.searchMatch = function(match) {
+			match = (match || "").toUpperCase();
+			var _mainLangKV = globalContent.mainLang().kv;
+
+			return $.map($scope.abilityList, function(_ability) {
+				if(
+					common.text.contains(_ability._name, match) ||															// Name
+					common.text.contains(_ability.kv.comment, match) ||														// Comment
+					common.text.contains(_mainLangKV.get(Language.unitAttr(_ability, '')), match)					// Main language name
+				) {
+					return {
+						_key: globalContent.mainLang().kv.get(Language.unitAttr(_ability, '')) || null,
+						value: _ability._name,
+						ability: _ability
+					};
+				}
+			});
+		};
+
+		$("#search").on("selected.search", function(e, item) {
+			var _ability = item.ability;
+			if(_ability) {
+				//直接选中
+				$scope.setAbility(_ability);
+				$scope.dblclick_locate(_ability);
+				//$scope.ability = _ability;
+				$scope.searchBox = false;
+			}
+		});
+		
+		// ================================================================
+		// =                          Global Key                          =
+		// ================================================================
+		var _hotKeySetting = {
+			F: function() {
+				$scope.searchKey = "";
+				$scope.searchBox = true;
+				setTimeout(function () {
+					$("#search").focus();
+				}, 100);
+			},
+			_F: "Search Unit"
+		};
+		
+		
+		globalContent.hotKey($scope, _hotKeySetting);
+		
 
 		// =================================================================
 		// =                          Application                          =

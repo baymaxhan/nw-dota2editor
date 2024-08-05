@@ -458,7 +458,7 @@ label.checkbox input[type="checkbox"] {
 }
 
 .image-tree-view .tree-head.active {
-	box-shadow: inset 0 0 5px green, inset 0 0 5px green, inset 0 0 5px green;
+	box-shadow: inset 0 0 5px gold, inset 0 0 5px gold, inset 0 0 5px gold;
 }
 
 .image-tree-view .tree-head .img-cntr {

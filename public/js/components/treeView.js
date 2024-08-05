@@ -141,7 +141,7 @@ components.directive('treeView', function($compile) {
 				'<span>{{treeView.name}}</span>'+
 			'</a>'+
 			'<div ui-sortable="sortableOptions" class="tree-list" ng-class="{open: treeView.open}" ng-model="treeView.list" ng-if="treeView.list">'+
-				'<div ng-repeat="item in treeView.list track by item._id">' +
+				'<div ng-repeat="item in treeView.list track by item._id" id="{{item._name}}">' +
 					'<div tree-view="item" ng-if="treeView.open" data-parent-node="treeView" data-click="click"></div>'+
 				'</div>'+
 			'</div>'+

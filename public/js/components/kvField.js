@@ -41,6 +41,18 @@ components.directive('kvfield', function($compile) {
 						console.error($scope.srctmpl, _list);
 					}
 				}
+				
+				if ($.isArray(_list) && $scope.attrunit.type == "single3"){
+					var result = []
+					//兼容技能的基类选择，由于技能和物品用的同一套，基类又不一样，所以这样处理一下。不知道是不是最好的办法，先凑合用
+					$.each(_list, function(i, config){
+						if(config.check == null || $scope.ability == null || $scope.ability[config.check] == config.result){
+							result.push(config)
+						}
+					})
+					_list = result;
+				}
+				
 				return _list;
 			};
 		},
@@ -73,6 +85,17 @@ components.directive('kvfield', function($compile) {
 			'<select class="form-control" ng-model="getKV().bind(getAttrPath())" ng-model-options="{getterSetter: true}" ng-switch-when="single" >' +
 				'<option value="">【{{Locale(\'Default\')}}】 Default</option>'+
 				'<option ng-repeat="(i, item) in getItemList() track by $index" value="{{item[0]}}">【{{Locale(item[0])}}】 {{item[0]}}</option>'+
+			'</select>'+
+			
+			// Single2 ，在配置的时候，有两个元素，_key是显示值，value是实际生效的值，并且此属性允许为空，即Default为空值
+			'<select class="form-control" ng-model="getKV().bind(getAttrPath())" ng-model-options="{getterSetter: true}" ng-switch-when="single2" >' +
+				'<option value="">【{{Locale(\'Default\')}}】 Default</option>'+
+				'<option ng-repeat="(i, item) in getItemList() track by $index" value="{{item.value}}">{{item.value}} {{item._key == null ? "" : "("+item._key+")"}}</option>'+
+			'</select>'+
+			
+			// Single3 ，在配置的时候，只有一个value值代表实际值，此属性不可为空（无default）
+			'<select class="form-control" ng-model="getKV().bind(getAttrPath())" ng-model-options="{getterSetter: true}" ng-switch-when="single3" >' +
+				'<option ng-repeat="(i, item) in getItemList() track by $index" value="{{item.value}}">{{item.value}}</option>'+
 			'</select>'+
 
 			// Boolean

@@ -154,7 +154,7 @@
 		<hr/>
 		<label>{{::Locale('RecentProject')}}:</label>
 		<ul>
-			<li ng-repeat="prj in Config.projectList">
+			<li ng-repeat="prj in Config.projectList track by $index">
 				[<a class="fa fa-times" ng-click="Config.deleteProjectPath(prj)"></a>]
 				<a ng-click="globalContent.project = prj; loadProject();">{{prj}}</a>
 			</li>

@@ -37,7 +37,7 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 		}
 
 		// Force Keep Ability
-		for(var i = 1 ; i <= 16 ; i += 1) {
+		for(var i = 1 ; i <= 24 ; i += 1) {
 			_my.kv.assumeKey("Ability" + i).keep = true;
 		};
 
@@ -212,13 +212,14 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 	// ================================================
 	Unit.AttrCommonList = [
 		[
-			{group: "common", attr: "BaseClass", type: "text", showFunc: function($scope) {return !$scope.isHero;}},
+			{group: "common", attr: "BaseClass", type: "single3", showFunc: function($scope) {return !$scope.isHero;}},
 			{group: "common", attr: "Model", type: "text"},
 			{group: "common", attr: "Skin", type: "text"},
 			{group: "common", attr: "ModelScale", type: "text"},
 			{group: "common", attr: "Level", type: "text"},
 			{group: "common", attr: "HasInventory", type: "single"},
 			{group: "common", attr: "ConsideredHero", type: "single", showFunc: function($scope) {return !$scope.isHero;}},
+			{group: "common", attr: "DisableWearables", type: "single"},
 		],
 
 		[
@@ -234,7 +235,7 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 
 		[
 			{group: "bounds", attr: "HealthBarOffset", type: "text"},
-			{group: "bounds", attr: "BoundsHullName", type: "text"},
+			{group: "bounds", attr: "BoundsHullName", type: "single2"},
 			{group: "bounds", attr: "RingRadius", type: "text"},
 		],
 		[
@@ -301,13 +302,21 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 			{group: "ability", attr: "Ability14", type: "text", match: _match_ability},
 			{group: "ability", attr: "Ability15", type: "text", match: _match_ability},
 			{group: "ability", attr: "Ability16", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability17", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability18", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability19", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability20", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability21", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability22", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability23", type: "text", match: _match_ability},
+			{group: "ability", attr: "Ability24", type: "text", match: _match_ability}
 		],
 	];
 
 	Unit.AttrAttackDefenseSpeedList = [
 		[
 			{group: "attack", attr: "AttackCapabilities", type: "single"},
-			{group: "attack", attr: "AttackDamageType", type: "single"},
+			//{group: "attack", attr: "AttackDamageType", type: "single"},
 			{group: "attack", attr: "AttackDamageMin", type: "text"},
 			{group: "attack", attr: "AttackDamageMax", type: "text"},
 			{group: "attack", attr: "AttackRate", type: "text"},
@@ -358,9 +367,12 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 
 		[
 			{group: "Behavior", attr: "UseNeutralCreepBehavior", type: "boolean"},
+			{group: "Behavior", attr: "DisableDamageDisplay", type: "boolean"},
 		],
 
 		[
+			{group: "others", attr: "IsSummoned", type: "boolean"},
+			{group: "others", attr: "IsBossCreature", type: "boolean"},
 			{group: "others", attr: "IsAncient", type: "boolean"},
 			{group: "others", attr: "IsNeutralUnitType", type: "boolean"},
 			{group: "others", attr: "CanBeDominated", type: "single"},
@@ -439,7 +451,7 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 		{value: "ent_dota_fountain"},
 	];
 
-	Unit.HasInventory = Unit.ConsideredHero = Unit.CanBeDominated = Unit.AutoAttacksByDefault = Unit.ShouldDoFlyHeightVisual = [
+	Unit.HasInventory = Unit.ConsideredHero = Unit.CanBeDominated = Unit.AutoAttacksByDefault = Unit.ShouldDoFlyHeightVisual = Unit.DisableWearables = [
 		["0"],
 		["1"],
 	];
@@ -461,6 +473,7 @@ app.factory("Unit", function($q, $http, FS, Locale, Language, Config, KV, AppVer
 		["DOTA_UNIT_CAP_MELEE_ATTACK"],
 		["DOTA_UNIT_CAP_RANGED_ATTACK"],
 	];
+	
 
 	Unit.AttackDamageType = [];
 

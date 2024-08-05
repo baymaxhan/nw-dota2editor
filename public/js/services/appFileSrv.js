@@ -160,6 +160,53 @@ app.factory("AppFileSrv", function ($interval, $q, $once, globalContent, Config)
 			list: _list
 		};
 	};
+	//循环遍历所有文件，只会返回文件。filter只能是正则表达式。如果不是，则不进行校验
+	AppFileSrv.listFilesTravels = function(path, filterReg,recv) {
+		var _deferred = $q.defer();
+		var _list = [];
+		var _deepPath = typeof recv === "string" ? recv : "";
+
+		path = PATH.normalize(path);
+		if(!FS.existsSync(path)) {
+			return {
+				success: false,
+				msg: "Folder not exist!",
+				list: _list
+			};
+		}
+		if(!FS.statSync(path).isDirectory()) {
+			return {
+				success: false,
+				msg: "Not a folder!",
+				list: _list
+			};
+		}
+
+		_list = FS.readdirSync(path);
+
+		_list = $.map(_list, function(file) {
+			if(FS.statSync(PATH.normalize(path + "/" + file)).isFile()) {//如果是文件，就判断是否符合正则表达式
+				if(filterReg instanceof RegExp){
+					if(filterReg.test(file)) {
+						//return PATH.normalize(_deepPath+file);
+						return _deepPath+file;
+					}
+				}else{
+					//return PATH.normalize(_deepPath+file);
+					return _deepPath+file;
+				}
+				
+			} else {//如果是目录，就遍历所有子级
+				var _subList = AppFileSrv.listFilesTravels(path + "/" + file, filterReg, _deepPath+file + "/");
+				if(_subList.success && _subList.list.length) return _subList.list;
+			}
+		});
+
+		return {
+			success: true,
+			list: _list
+		};
+	};
 
 	// Write file
 	AppFileSrv.readFile = function(path, encoding) {

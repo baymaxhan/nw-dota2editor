@@ -96,15 +96,25 @@ app.factory("KV", function(NODE, $q, Config) {
 
 	_KV.Writer.prototype.withHeader = function(title, initKV) {
 		var _my = this;
-
-		_my.writeComment(APP_APP_NAME);
-		_my.writeComment("Get latest version: " + APP_APP_GITHUB);
+	
+		//去掉这个版本说明，原作者已经不维护了
+		//_my.writeComment(APP_APP_NAME);
+		//_my.writeComment("Get latest version: " + APP_APP_GITHUB);
 		_my.write('');
 		_my.write('"$1"', title);
 		_my.write('{');
 		$.each(initKV || {}, function(key, value) {
 			_my.write('"$1"		"$2"', key, value);
 		});
+	};
+	
+	_KV.Writer.prototype.writeBase = function(baseArray) {
+		if(baseArray instanceof Array && baseArray.length > 0){
+			var _my = this;
+			baseArray.forEach(function(line) {
+				_my.write("#" + line);
+			});
+		}
 	};
 
 	_KV.Writer.prototype.withEnd = function() {
@@ -139,8 +149,8 @@ app.factory("KV", function(NODE, $q, Config) {
 	_KV.Writer.prototype.writeContent = function(content) {
 		var _my = this;
 		$.each(content.split("\n"), function(i, line) {
-			line = line.trim();
 			if(!line) return;
+			line = line.trim();
 			_my.write(line);
 		});
 	};
@@ -172,9 +182,13 @@ app.factory("KV", function(NODE, $q, Config) {
 		}
 	};
 
-	_KV.Writer.prototype.save = function(path, encoding, _deferred) {
+	_KV.Writer.prototype.save = function(path, encoding, _deferred,widthBOM) {
 		_deferred = _deferred || $q.defer();
-		NODE.saveFile(path, encoding, this._data).then(function() {
+		var data = this._data
+		if(widthBOM){
+			data = "\ufeff" + data
+		}
+		NODE.saveFile(path, encoding, data).then(function() {
 			_deferred.resolve();
 		}, function(err) {
 			_deferred.reject(err);

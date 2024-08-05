@@ -28,7 +28,7 @@ app.factory("AppVersionSrv", function ($q, $http, $timeout, $compile, $rootScope
 		FS.readFile(AppVersionSrv.resPath + "_VERSION", "utf8", function (err, data) {
 			AppVersionSrv.version = data || "";
 
-			$http.get("https://raw.githubusercontent.com/zombieJ/nw-dota2editor-dist/master/dist/_VERSION").then(function (data) {
+			/* $http.get("https://raw.githubusercontent.com/zombieJ/nw-dota2editor-dist/master/dist/_VERSION").then(function (data) {
 				if(AppVersionSrv.version.trim() < data.data.trim()) {
 					// Require update
 					var $updateNotify = $.notify({
@@ -64,14 +64,14 @@ app.factory("AppVersionSrv", function ($q, $http, $timeout, $compile, $rootScope
 						});
 					};
 				}
-			});
+			}); */
 		});
 	})();
 
 	// ==============================================================
 	// =                      Application Check                     =
 	// ==============================================================
-	AppVersionSrv.ready = false;
+	AppVersionSrv.ready = false; 
 	AppVersionSrv.stateMSG = "Loading...";
 
 	AppVersionSrv.check = function () {

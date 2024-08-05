@@ -31,6 +31,7 @@ components.directive('tipfield', function($compile) {
 				_timerID = setTimeout(function() {
 					$scope.selected = -1;
 					var _val = ($element.val() || "");
+					var origin_var = _val
 					if(!_val) {
 						$scope.currentList = [];
 					} else {
@@ -46,12 +47,18 @@ components.directive('tipfield', function($compile) {
 							});
 						}
 					}
-
+					//非搜索框，结果只有一个，并且一模一样就不显示列表了
+					if($element.attr("id") != "search"){
+						if($scope.currentList.length == 1 && $scope.currentList[0].value == origin_var){
+							$scope.currentList = [];
+						}
+					}
+					
 					$scope.currentList = $scope.currentList.slice(0, $scope.pagesize);
 
 					$scope.$apply();
 					_timerID = null;
-				}, 100);
+				}, 500);
 			}
 
 			// =======================================================
@@ -59,17 +66,25 @@ components.directive('tipfield', function($compile) {
 			// =======================================================
 			// Key press to show type ahead
 			$element.on("keyup", function(e) {
+				/* //复制粘贴不弹出列表了
+				if(e.ctrlKey && (e.keyCode == 67 || e.keyCode == 86)){
+					$scope.$apply();
+					return;
+				} */
+				
+				
+				//65-90:a-zA-Z	48-57:0-9	8:backspace	  46:delete   32:space
 				if((65 <= e.which && e.which <= 90) || (48 <= e.which && e.which <= 57) || e.which === 8 || e.which === 46 || e.which === 32) {
 					_updateList();
-				} else if(e.which === 38) {
+				} else if(e.which === 38) {//38:向上
 					$scope.selected -= 1;
 					if($scope.selected < 0) $scope.selected = $scope.currentList.length - 1;
 					$scope.$apply();
-				} else if(e.which === 40) {
+				} else if(e.which === 40) {//40：向下
 					$scope.selected += 1;
 					if($scope.selected >= $scope.currentList.length) $scope.selected =  0;
 					$scope.$apply();
-				} else if(e.which === 13) {
+				} else if(e.which === 13) {//13：enter
 					$scope.selectItem($scope.currentList[$scope.selected]);
 					$scope.$apply();
 				}

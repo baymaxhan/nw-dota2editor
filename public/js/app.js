@@ -394,11 +394,12 @@ app.controller('main', function ($scope, $route, $location, $q,
 				_deferred_file.resolve(4);
 			} else {
 				var _writer = new KV.Writer();
+				_writer.writeBase(globalContent[_globalListKey+"_base"])
 
 				if (isHero) {
-					_writer.withHeader("DOTAHeroes", {Version: 1});
+					_writer.withHeader("DOTAHeroes", {});
 				} else {
-					_writer.withHeader("DOTAUnits", {Version: 1});
+					_writer.withHeader("DOTAUnits", {});
 				}
 
 				$.each(globalContent[_globalListKey], function (i, ability) {
@@ -444,7 +445,8 @@ app.controller('main', function ($scope, $route, $location, $q,
 				_deferred_file.resolve(4);
 			} else {
 				var _writer = new KV.Writer();
-				_writer.withHeader("DOTAAbilities", {Version: 1});
+				_writer.writeBase(globalContent[_globalListKey+"_base"])
+				_writer.withHeader("DOTAAbilities", {});
 
 				$.each(globalContent[_globalListKey], function (i, ability) {
 					_writer.write('');
@@ -477,28 +479,28 @@ app.controller('main', function ($scope, $route, $location, $q,
 		// ===================================================================
 		// =                          保存 【单位】                          =
 		// ===================================================================
-		{name: "Unit", desc: "单位", selected: true, saveFunc: saveUnitFunc(false)},
+		{name: "Unit", desc: "单位", selected: false, saveFunc: saveUnitFunc(false)},
 
 		// ===================================================================
 		// =                          保存 【英雄】                          =
 		// ===================================================================
-		{name: "Hero", desc: "英雄", selected: true, saveFunc: saveUnitFunc(true)},
+		{name: "Hero", desc: "英雄", selected: false, saveFunc: saveUnitFunc(true)},
 
 		// ===================================================================
 		// =                          保存 【技能】                          =
 		// ===================================================================
-		{name: "Ability", desc: "技能", selected: true, saveFunc: saveAbilityFunc(false)},
+		{name: "Ability", desc: "技能", selected: false, saveFunc: saveAbilityFunc(false)},
 
 		// ===================================================================
 		// =                          保存 【物品】                          =
 		// ===================================================================
-		{name: "Item", desc: "物品", selected: true, saveFunc: saveAbilityFunc(true)},
+		{name: "Item", desc: "物品", selected: false, saveFunc: saveAbilityFunc(true)},
 
 		// ===================================================================
 		// =                          保存 【语言】                          =
 		// ===================================================================
 		{
-			name: "Language", desc: "语言", selected: true, saveFunc: function () {
+			name: "Language", desc: "语言", selected: false, saveFunc: function () {
 			var _deferred = $q.defer();
 			var _saveLangCount = 0;
 
@@ -513,8 +515,13 @@ app.controller('main', function ($scope, $route, $location, $q,
 						_ERROR("Language",0, "File not provide origin KV!", language.name, language);
 						return;
 					}
+					_writer.writeBase(language._oriKV._base)
+					
 					var _filePath = Language.folderPath + "/" + language.fileName.replace(/^_/, "").replace(/\.bac/, "");
 					_saveLangCount += 1;
+					
+					//语言文件不保留空串
+					language._oriKV.saveBlankString = false
 					_writer.writeContent(language._oriKV.toString());
 
 					// Backup
@@ -523,7 +530,7 @@ app.controller('main', function ($scope, $route, $location, $q,
 					}
 
 					// File
-					_promiseList.push(_writer.save(_filePath, "ucs2"));
+					_promiseList.push(_writer.save(_filePath, "utf8",null,true));
 					$q.all(_promiseList).then(function () {
 						_deferred.resolve();
 					}, function () {
@@ -638,7 +645,15 @@ app.controller('main', function ($scope, $route, $location, $q,
 	var _colorTarget;
 	$(document).on("click", ".color-picker", function () {
 		_colorTarget = $(this).closest("td").find("input, textarea");
-		$("#colorDisplayLayout").html(_colorTarget.val().replace(/\\n/g, "<br>").replace(/\\"/g, '"'));
+		//在保存的时候（confirmColoredText），会将引号替换成转移字符，将<h1></h1>由转义字符替换为原始等操作，这里要进行逆操作
+		var txt = _colorTarget.val();
+		var _html = txt
+			.replace(/\\"/g, '"')
+			.replace(/\\n<h1>/g,'<br>&lt;h1&gt;')
+			.replace(/<h1>/g,'&lt;h1&gt;') 
+			.replace(/<\/h1>/g,'&lt;/h1&gt;<br>') 
+			;
+		$("#colorDisplayLayout").html(_html);
 		$("#colorPickerMDL").modal();
 	});
 
@@ -672,12 +687,19 @@ app.controller('main', function ($scope, $route, $location, $q,
 	// Save color picker text
 	$scope.confirmColoredText = function () {
 		$("#colorPickerMDL").modal('hide');
-
-		var _text = $("#colorDisplayLayout").html()
+		var _html = $("#colorDisplayLayout").html()
+		//为了在国际化文件中正常显示，将引号替换成转移字符，将<h1></h1>由转义字符替换为原始的样式
+		//每一次enter换行，这个picker控件都会产生一个<div><br><\/div>以表示新行（一旦录入内容，将会替换掉其中的<br>）
+		//但是因为新版本的dota以<br>表示换行，以\n换段（一个h1一段），所以将这个整体替换为<br>
+		var _text = _html
 			.replace(/"/g, '\\"')
+			.replace(/<div><br><\/div>/g, '<br>')//先替换空行，再替换有内容的行
 			.replace(/<div>/g, '<br>')
 			.replace(/<\/div>/g, '')
-			.replace(/<br>/g, '\\n')
+			.replace(/&lt;h1&gt;/g, '<h1>') 
+			.replace(/&lt;\/h1&gt;/g, '</h1>') 
+			.replace(/<br><h1>/g,'\\n<h1>')//h1换行后，由于编辑器是用的<br>换行，但是到dota里面，如果是<br><h1>会导致这个<h1>对应的段落显示异常，所以这里处理一下
+			.replace(/<\/h1>[ ]*<br>/g,'</h1>')
 			;
 		_colorTarget.val(_text);
 		_colorTarget.trigger("input");
@@ -789,6 +811,11 @@ app.controller('main', function ($scope, $route, $location, $q,
 			globalContent.system.hideMenu = true;
 		}, 1);
 	});
+	//禁用dom默认的右键事件，否则会导致自定义的右键菜单失效，比如技能列表不能复制技能，添加特效不能添加控制点等
+	$(document).on("contextmenu", function (e) {
+		e.preventDefault();
+		return false;
+	});
 
 	// 阻止隐藏菜单
 	$(document).on("click.preventHideMenu", ".app-submenu > a", function (e) {
@@ -867,7 +894,8 @@ app.controller('main', function ($scope, $route, $location, $q,
 		var gui = require('nw.gui');
 		var win = gui.Window.get();
 		$scope.devReload = function() {
-			win.reloadDev();
+			//win.reloadDev();新版本不支持了
+			win.reload();
 		};
 		$scope.devShowConsole = function() {
 			win.showDevTools();

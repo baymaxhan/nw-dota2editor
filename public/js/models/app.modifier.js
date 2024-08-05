@@ -132,7 +132,7 @@ app.factory("Modifier", function(Event) {
 		[
 			{group: "statusEffect", attr: "StatusEffectName", type: "text"},
 			{group: "statusEffect", attr: "StatusEffectPriority", type: "text"},
-			{group: "statusEffect", attr: "OverrideAnimation", type: "single"}
+			{group: "statusEffect", attr: "OverrideAnimation", type: "text"}
 		],
 	];
 
@@ -248,9 +248,7 @@ app.factory("Modifier", function(Event) {
 		{value: "MODIFIER_PROPERTY_ABSORB_SPELL"},
 		{value: "MODIFIER_PROPERTY_ATTACK_RANGE_BONUS"},
 		{value: "MODIFIER_PROPERTY_ATTACKSPEED_BONUS_CONSTANT"},
-		{value: "MODIFIER_PROPERTY_ATTACKSPEED_BONUS_CONSTANT_POWER_TREADS"},
-		{value: "MODIFIER_PROPERTY_ATTACKSPEED_BONUS_CONSTANT_SECONDARY"},
-		{value: "MODIFIER_PROPERTY_AVOID_CONSTANT"},
+		{value: "MODIFIER_PROPERTY_AVOID_DAMAGE"},
 		{value: "MODIFIER_PROPERTY_AVOID_SPELL"},
 		{value: "MODIFIER_PROPERTY_BASEATTACK_BONUSDAMAGE"},
 		{value: "MODIFIER_PROPERTY_BASE_ATTACK_TIME_CONSTANT"},
@@ -330,10 +328,10 @@ app.factory("Modifier", function(Event) {
 		{value: "MODIFIER_PROPERTY_STATS_AGILITY_BONUS"},
 		{value: "MODIFIER_PROPERTY_STATS_INTELLECT_BONUS"},
 		{value: "MODIFIER_PROPERTY_STATS_STRENGTH_BONUS"},
-		{value: "MODIFIER_PROPERTY_TOOLTIP"},
+		//{value: "MODIFIER_PROPERTY_TOOLTIP"},
 		{value: "MODIFIER_PROPERTY_TOTAL_CONSTANT_BLOCK"},
 		{value: "MODIFIER_PROPERTY_TOTAL_CONSTANT_BLOCK_UNAVOIDABLE_PRE_ARMOR"},
-		{value: "MODIFIER_PROPERTY_TOTALDAMAGEOUTGOING_PERCENTAGE"},
+		//{value: "MODIFIER_PROPERTY_TOTALDAMAGEOUTGOING_PERCENTAGE"},
 		{value: "MODIFIER_PROPERTY_TRANSLATE_ACTIVITY_MODIFIERS"},
 		{value: "MODIFIER_PROPERTY_TRANSLATE_ATTACK_SOUND"},
 		{value: "MODIFIER_PROPERTY_TURN_RATE_PERCENTAGE"},
@@ -357,7 +355,8 @@ app.factory("Modifier", function(Event) {
 		{value: "MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE"},
 
 		{value: "MODIFIER_PROPERTY_CAN_ATTACK_TREES"},
-		{value: "MODIFIER_PROPERTY_VISUAL_Z_DELTA"}
+		{value: "MODIFIER_PROPERTY_VISUAL_Z_DELTA"},
+		{value: "MODIFIER_PROPERTY_MANACOST_PERCENTAGE"}
 	];
 
 	Modifier.States = [

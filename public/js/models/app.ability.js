@@ -4,10 +4,13 @@
 // =                        技能                        =
 // ======================================================
 app.factory("Ability", function($q, Event, Modifier) {
-	var Ability = function(kv) {
+	var Ability = function(kv,isItem) {
 		var _my = this;
 		_my.kv = kv || new KV("undefined", []);
 		_my._changed = false;
+		
+		
+		_my._isItem = isItem
 
 		// Refresh un-assigned list
 		_my.unassignedList = [];
@@ -43,7 +46,9 @@ app.factory("Ability", function($q, Event, Modifier) {
 		_my._modifier = _my.kv.assumeKey("Modifiers", true);
 
 		// Ability Special
-		_my._special = _my.kv.assumeKey("AbilitySpecial", true);
+		//_my._special = _my.kv.assumeKey("AbilitySpecial", true);
+		
+		_my._special = _my.kv.assumeKey("AbilityValues", true);
 
 		return _my;
 	};
@@ -88,7 +93,8 @@ app.factory("Ability", function($q, Event, Modifier) {
 
 	// Get Ability Special
 	Ability.prototype.getSpecialList = function() {
-		return this.kv.get("AbilitySpecial", false) || [];
+		// return this.kv.get("AbilitySpecial", false) || [];
+		return this.kv.get("AbilityValues", false) || [];
 	};
 
 	// Get Pre-cache
@@ -147,8 +153,28 @@ app.factory("Ability", function($q, Event, Modifier) {
 	// =================================================
 	// =                     Parse                     =
 	// =================================================
-	Ability.parse = function(kvUnit) {
-		var _unit = new Ability(kvUnit);
+	Ability.parse = function(kvUnit,isItem) {
+		//把旧版本的SpecialValues转成 AbilityValues。 在生成Ability前就处理好
+		var oldSpecials = kvUnit.get("AbilitySpecial", false)
+		if (oldSpecials != null){
+			var newSpecials = []
+			$.each(oldSpecials, function(i, kv) {
+				var svs = kv.value
+				if(svs instanceof  Array && svs.length == 2){
+					var second = svs[1]
+					newSpecials.push(new KV(second.key, second.value))
+				}
+			});
+			if (newSpecials.length > 0) {
+				kvUnit.set("AbilityValues", newSpecials)
+			}
+			
+			kvUnit.delete("AbilitySpecial")
+		}
+		
+		
+		
+		var _unit = new Ability(kvUnit,isItem);
 
 		// Init modifier
 		$.each(_unit.getModifierList(), function(i, modifierKV) {
@@ -162,7 +188,28 @@ app.factory("Ability", function($q, Event, Modifier) {
 			var _precache = common.array.find(kv.value, _precacheList, "value");
 			common.array.remove(_precache, _precacheList);
 		});
+	
 
+		//键值添加最新的类天赋支持，添加这一段以后，以前添加的特殊值就可以支持天赋引用了。
+		//但是如果KV文件编辑错误的话，可能有问题，比如只有一个的时候，并不是保存的类型（默认肯定是这个）
+		/* var specials = _unit.getSpecialList()
+		$.each(specials, function(i, kv) {
+			var svs = kv.value
+			if(svs instanceof  Array && svs.length < 3){
+				if(svs.length == 1){
+					svs.push(new KV())
+					svs.push(new KV("LinkedSpecialBonus",""))
+				}else if(svs.length == 2){
+					var second = svs[1]
+					if(second.key === "LinkedSpecialBonus"){
+						svs[1] = new KV()
+						svs[2] = second
+					}else{
+						svs.push(new KV("LinkedSpecialBonus",""))
+					}
+				}
+			}
+		}); */
 		return _unit;
 	};
 
@@ -179,11 +226,30 @@ app.factory("Ability", function($q, Event, Modifier) {
 		// Pre-Cache
 		var _pre_precacheList = this.getPrecacheList();
 		var _pre_kvPrecacheList = this.getKVPrecacheList();
+		
+		//去掉预载入页面和modifier等里面重复的信息
+		$.each(_pre_kvPrecacheList, function(i, kv) {
+			var _precache = common.array.find(kv.value, _pre_precacheList, "value");
+			common.array.remove(_precache, _pre_precacheList);
+		});
+		//合并
 		var _merge_precacheList = _pre_precacheList.concat(_pre_kvPrecacheList);
 		if(_merge_precacheList.length === 0) {
 			this.kv.delete("precache");
 		} else {
-			this.kv.assumeKey("precache", true).value = _merge_precacheList;
+			//去重（两个modifier里面的也会重复）
+			var finalList = []
+			for (var i = 0; i < _merge_precacheList.length; i++) {
+				for (var j = i+1; j < _merge_precacheList.length; j++) {
+				  var p1 = _merge_precacheList[i]
+				  var p2 = _merge_precacheList[j]
+				  if(p1.key === p2.key && p1.value === p2.value){
+					++i;
+				  }
+				}
+				finalList.push(_merge_precacheList[i]);
+			}
+			this.kv.assumeKey("precache", true).value = finalList;
 		}
 
 		// Order
@@ -212,9 +278,31 @@ app.factory("Ability", function($q, Event, Modifier) {
 		this.kv.value = _orderList;
 
 		// Special Ability
-		$.each(this.getSpecialList(), function(i, specialKV) {
-			specialKV.key = common.text.preFill((i + 1), "0", 2);
-		});
+		var specialList = this.getSpecialList()
+		if(specialList && specialList.length > 0){
+			//去除空的键值（只有类型没有名字或者数值）
+			for(var i = specialList.length - 1 ; i >= 0 ; i--){
+				var specialKV = specialList[i];
+				/* //旧版AbilitySpecial的处理方法
+				if(specialKV.value == null || specialKV.value.length < 2){
+					specialList.splice(i,1)
+				}else{
+					var skv = specialKV.value[1];
+					if(skv && (skv.key == "" || skv.value == "")){
+						specialList.splice(i,1)
+					}
+				} */
+				
+				if(specialKV.key == "" || specialKV.value == ""){
+					specialList.splice(i,1)
+				}
+			}
+			//重新编号
+			/* $.each(specialList, function(i, specialKV) {
+				specialKV.key = common.text.preFill((i + 1), "0", 2);
+			}); */
+		}
+		
 
 		// Event process
 		$.each(this.getEventList(), function(i, event) {
@@ -232,13 +320,16 @@ app.factory("Ability", function($q, Event, Modifier) {
 		}
 
 		// Ability Special
-		if((this.kv.get("AbilitySpecial") || []).length === 0) {
+		/* if((this.kv.get("AbilitySpecial") || []).length === 0) {
 			this.kv.delete("AbilitySpecial");
+		} */
+		if((this.kv.get("AbilityValues") || []).length === 0) {
+			this.kv.delete("AbilityValues");
 		}
 
 		// ==========> Write
 		writer.writeContent(this.kv.toString(_keepKV ? null : function(kv) {
-			if(kv.key === "" || kv.value === "" || kv.key.match(/^_/)) return false;
+			if(!kv.key || kv.key === "" || kv.value === "" || kv.key.match(/^_/)) return false;
 		}));
 
 		// ==========> Clean Up
@@ -258,12 +349,15 @@ app.factory("Ability", function($q, Event, Modifier) {
 
 	Ability.AttrList = [
 		[
-			{group: "common", attr: "BaseClass", type: "text", defaultValue: "ability_datadriven"},
+			{group: "common", attr: "BaseClass", type: "single3", defaultValue: "ability_datadriven"},
 			{group: "common", attr: "AbilityTextureName", type: "text"},
 			{
 				group: "common", attr: "ScriptFile", type: "text", showFunc: function ($scope) {
-				var baseClass = $scope.ability.get("BaseClass");
-				return $scope.ability && (baseClass === "ability_lua" || baseClass === "item_lua");
+				if($scope.ability){
+					var baseClass = $scope.ability.get("BaseClass");
+					return (baseClass === "ability_lua" || baseClass === "item_lua");
+				}
+				
 			}
 			},
 			{group: "common", attr: "AbilityBehavior", type: "group"}
@@ -279,6 +373,7 @@ app.factory("Ability", function($q, Event, Modifier) {
 			{group: "target", attr: "AbilityUnitTargetFlags", type: "group"},
 			{group: "target", attr: "AbilityUnitDamageType", type: "single"},
 			{group: "target", attr: "SpellImmunityType", type: "single"},
+			{group: "target", attr: "SpellDispellableType", type: "single"},
 			{group: "target", attr: "CastFilterRejectCaster", type: "boolean"},
 			{group: "target", attr: "FightRecapLevel", type: "text"}
 		],
@@ -374,7 +469,8 @@ app.factory("Ability", function($q, Event, Modifier) {
 		_list.push("_EVENT_LIST");
 
 		_list.push("Modifiers");
-		_list.push("AbilitySpecial");
+		// _list.push("AbilitySpecial");
+		_list.push("AbilityValues");
 
 		return _list;
 	};
@@ -383,8 +479,10 @@ app.factory("Ability", function($q, Event, Modifier) {
 	// =                     Enum                     =
 	// ================================================
 	Ability.BaseClass = [
-		{value: "ability_datadriven"},
-		{value: "ability_lua"}
+		{value: "ability_datadriven", check: "_isItem", result: false},
+		{value: "ability_lua", check: "_isItem", result: false},
+		{value: "item_datadriven", check: "_isItem", result: true},
+		{value: "item_lua", check: "_isItem", result: true},
 	];
 
 	Ability.ItemShareability = [
@@ -460,6 +558,7 @@ app.factory("Ability", function($q, Event, Modifier) {
 		["DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_CHANNEL"],
 		["DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET"],
 		["DOTA_ABILITY_BEHAVIOR_OPTIONAL_NO_TARGET"],
+		["DOTA_ABILITY_BEHAVIOR_VECTOR_TARGETING"],
 	];
 
 	Ability.AbilityUnitTargetType = [
@@ -520,6 +619,12 @@ app.factory("Ability", function($q, Event, Modifier) {
 		["SPELL_IMMUNITY_ALLIES_NO",false],
 		["SPELL_IMMUNITY_ENEMIES_YES",false],
 		["SPELL_IMMUNITY_ENEMIES_NO",false]
+	];
+	
+	Ability.SpellDispellableType = [
+		["SPELL_DISPELLABLE_NO"],
+		["SPELL_DISPELLABLE_YES"],
+		["SPELL_DISPELLABLE_YES_STRONG"]
 	];
 
 	Ability.AbilityType = [

@@ -57,6 +57,7 @@ var _abilityCtrl = function(isItem) {
 			$scope.currentModifier = $scope.ability ? $scope.ability.getModifierList()[0] : null;
 
 			if($scope.ability) {
+				//$scope.ability._isItem = isItem
 				if(isItem) {
 					window._currentItem = $scope.ability._name;
 				} else {
@@ -124,11 +125,16 @@ var _abilityCtrl = function(isItem) {
 			}
 		};
 
-		$scope.addAbilitySpecial = function() {
+		/* $scope.addAbilitySpecial = function() {
 			$scope.ability.kv.assumeKey("AbilitySpecial", true).value.push(new KV("00", [
 				new KV("var_type", "FIELD_INTEGER"),
 				new KV()
 			]));
+		}; */
+		
+		//新版special
+		$scope.addAbilitySpecial = function() {
+			$scope.ability.kv.assumeKey("AbilityValues", true).value.push(new KV());
 		};
 
 		// Copy / paste modifier
@@ -179,9 +185,14 @@ var _abilityCtrl = function(isItem) {
 			if(!match.match(/^%/) || !$scope.ability) return [];
 
 			match = match.slice(1);
-			var _list =  $.map($scope.ability.getSpecialList(), function(kv) {
+			/* var _list =  $.map($scope.ability.getSpecialList(), function(kv) {
 				if((kv.value[1].key || "").toUpperCase().indexOf(match) !== -1) {
 					return {value: "%" + kv.value[1].key};
+				}
+			}); */
+			var _list =  $.map($scope.ability.getSpecialList(), function(kv) {
+				if((kv.key || "").toUpperCase().indexOf(match) !== -1) {
+					return {value: "%" + kv.key};
 				}
 			});
 			return _list;
@@ -197,18 +208,32 @@ var _abilityCtrl = function(isItem) {
 			if(!textureName) return _iconEmpty;
 
 			if(!_iconCache[textureName]) {
-				console.log("project path = " + project);
-
-				if (isItem) {
+				/* if (isItem) {
 					_iconCache[textureName] = [
 						globalContent.project + "/resource/flash3/images/items/" + textureName.replace(/^item_/, "") + ".png",
+						AppVersionSrv.resPath + "res/items/" + textureName.replace(/^item_/, "") + ".png",
 						"https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/resource/flash3/images/items/" + textureName.replace(/^item_/, "") + ".png",
 						'public/img/none_item.png'
 					];
 				} else {
 					_iconCache[textureName] = [
 						globalContent.project + "/resource/flash3/images/spellicons/" + textureName + ".png",
+						AppVersionSrv.resPath + "res/spellicons/" + textureName + ".png",
 						"https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/resource/flash3/images/spellicons/" + textureName + ".png",
+						'public/img/logo.jpg'
+					];
+				} */
+				
+				if (isItem) {
+					_iconCache[textureName] = [
+						globalContent.project + "/resource/flash3/images/items/" + textureName.replace(/^item_/, "") + ".png",
+						AppVersionSrv.resPath + "res/items/" + textureName.replace(/^item_/, "") + ".png",
+						'public/img/none_item.png'
+					];
+				} else {
+					_iconCache[textureName] = [
+						globalContent.project + "/resource/flash3/images/spellicons/" + textureName + ".png",
+						AppVersionSrv.resPath + "res/spellicons/" + textureName + ".png",
 						'public/img/logo.jpg'
 					];
 				}
@@ -227,7 +252,8 @@ var _abilityCtrl = function(isItem) {
 		$scope.texturePickerInit = function() {
 			$timeout(function() {
 				$scope.texturePickerList = AppFileSrv.listFiles(AppVersionSrv.resPath + "res/" + $scope.texturePath, /\.(png|jpg|gif|bmp)$/i).list;
-				$scope.texturePickerCustomizeList = AppFileSrv.listFiles(Config.projectPath + "/resource/flash3/images/" + $scope.texturePath, /\.(png|jpg|gif|bmp)$/i).list;
+				//使用新的遍历方法，遍历所有子目录
+				$scope.texturePickerCustomizeList = AppFileSrv.listFilesTravels(Config.projectPath + "/resource/flash3/images/" + $scope.texturePath, /\.(png|jpg|gif|bmp)$/i).list;
 			});
 		};
 		$scope.texturePickerPreview = function($event, path) {
@@ -273,7 +299,7 @@ var _abilityCtrl = function(isItem) {
 					UI.modal.highlight("#newAbilityMDL");
 				});
 			} else {
-				var _clone = new Ability($scope._newAbilityFork ? $scope._newAbilityFork.kv.clone() : null);
+				var _clone = new Ability($scope._newAbilityFork ? $scope._newAbilityFork.kv.clone() : null,isItem);
 				_clone._name = $scope._newAbilityName;
 				_clone._changed = true;
 
@@ -296,8 +322,11 @@ var _abilityCtrl = function(isItem) {
 
 							// Ability Special
 							$.each($scope._newAbilityFork.getSpecialList(), function(i, abilitySpecial) {
-								var _oriKey = Language.abilityAttr($scope._newAbilityFork._name, abilitySpecial.value[1].key);
+								/* var _oriKey = Language.abilityAttr($scope._newAbilityFork._name, abilitySpecial.value[1].key);
 								var _tgtKey = Language.abilityAttr(_clone._name, abilitySpecial.value[1].key);
+								lang.kv.set(_tgtKey, lang.kv.get(_oriKey)); */
+								var _oriKey = Language.abilityAttr($scope._newAbilityFork._name, abilitySpecial.key);
+								var _tgtKey = Language.abilityAttr(_clone._name, abilitySpecial.key);
 								lang.kv.set(_tgtKey, lang.kv.get(_oriKey));
 							});
 
@@ -343,8 +372,8 @@ var _abilityCtrl = function(isItem) {
 			if(!$scope.abilityList) return;
 
 			UI.modal.highlight($("#newTmplMDL").modal());
-			$scope._newTmplAbility._type = "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET";
-			$scope._newTmplAbility._target = "DOTA_UNIT_TARGET_TEAM_ENEMY";
+			$scope._newTmplAbility._type = "DOTA_ABILITY_BEHAVIOR_NO_TARGET"; //原值DOTA_ABILITY_BEHAVIOR_UNIT_TARGET
+			$scope._newTmplAbility._target = "Default"; //原值DOTA_UNIT_TARGET_TEAM_ENEMY
 			$scope._newTmplAbility._channelled = false;
 			$scope._newTmplAbility._autoID = true;
 
@@ -367,8 +396,9 @@ var _abilityCtrl = function(isItem) {
 		};
 
 		$scope.newTmplAbility_TemplateConfirm = function() {
-			var _newAbility = new Ability();
+			var _newAbility = new Ability(null,isItem);
 			_newAbility._changed = true;
+						
 			$scope.abilityList.push(_newAbility);
 			$scope.setAbility(_newAbility);
 
@@ -379,13 +409,16 @@ var _abilityCtrl = function(isItem) {
 			// Type
 			$scope.ability._name = $scope._newTmplAbility._name;
 			$scope.ability.kv.set("AbilityBehavior", $scope._newTmplAbility._type);
-			if($scope._newTmplAbility._type !== "DOTA_ABILITY_BEHAVIOR_PASSIVE") {
+			
+			if($scope._newTmplAbility._target !== "Default"){
 				// Target type
 				$scope.ability.kv.set("AbilityUnitTargetType", "DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC");
 
 				// Target team
 				$scope.ability.kv.set("AbilityUnitTargetTeam", $scope._newTmplAbility._target);
-
+			}
+			
+			if($scope._newTmplAbility._type !== "DOTA_ABILITY_BEHAVIOR_PASSIVE") {
 				// Channel
 				if($scope._newTmplAbility._channelled) {
 					$scope.ability.kv.set("AbilityBehavior", $scope.ability.kv.get("AbilityBehavior") + " | DOTA_ABILITY_BEHAVIOR_CHANNELLED");
@@ -412,6 +445,7 @@ var _abilityCtrl = function(isItem) {
 			"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		];
 		$scope._newTmplAbility.target = [
+			"Default",
 			"DOTA_UNIT_TARGET_TEAM_ENEMY",
 			"DOTA_UNIT_TARGET_TEAM_FRIENDLY",
 			"DOTA_UNIT_TARGET_TEAM_BOTH"
@@ -511,7 +545,7 @@ var _abilityCtrl = function(isItem) {
 
 			// Copy ability
 			var kv = KV.parse(_data);
-			var _newAbility = Ability.parse(kv);
+			var _newAbility = Ability.parse(kv,isItem);
 			_newAbility.kv.key = $scope._newTmplAbility._name;
 			_newAbility._changed = true;
 
@@ -572,8 +606,15 @@ var _abilityCtrl = function(isItem) {
 
 				// Special Abilities
 				$.each($scope.ability.getSpecialList(), function(i, special) {
-					var _oldKey = Language.abilityAttr(oldName, special.value[1].key);
+					/* var _oldKey = Language.abilityAttr(oldName, special.value[1].key);
 					var _newKey = Language.abilityAttr(newName, special.value[1].key);
+					if(lang.kv.get(_oldKey)) {
+						lang.kv.set(_newKey, lang.kv.get(_oldKey));
+					}
+					if(_newKey.toUpperCase() !== _oldKey.toUpperCase()) lang.kv.delete(_oldKey); */
+					
+					var _oldKey = Language.abilityAttr(oldName, special.key);
+					var _newKey = Language.abilityAttr(newName, special.key);
 					if(lang.kv.get(_oldKey)) {
 						lang.kv.set(_newKey, lang.kv.get(_oldKey));
 					}
@@ -718,7 +759,32 @@ var _abilityCtrl = function(isItem) {
 			Object.defineProperties(item, {
 				name: {
 					configurable: true,
-					get: function() {return globalContent.mainLang().kv.get(Language.abilityAttr(ability._name, ''), Config.global.kvCaseSensitive) || ability._name;}
+					get: function() {
+						item._local = globalContent.mainLang().kv.get(Language.abilityAttr(ability._name, ''), Config.global.kvCaseSensitive) || ability._name;
+						
+						if (item.__nameLocal != item._local) {
+							item.__nameLocal = item._local
+							//物品的显示名称和显示颜色，这个只能处理名字里有一个<font>的情况，如果有多个<font>，只显示第一个的颜色
+							var name = item.__nameLocal
+							if(name && name.startsWith("<font")){
+
+								var pre = name.substring(0,name.indexOf(">"))
+								item.__showNameColor = pre.replace("<font","").replace("color","").replace("=","").trim()
+								//去掉第一个和最后一个font标签
+								item.__showName = name.replace(/^<font[^>]*>/,"").replace(/<\/font[^>]*>$/,"")
+							}else{
+								item.__showNameColor = null
+								item.__showName = name
+							}
+						}
+						return item.__showName
+					}
+				},
+				nameColor:{
+					configurable: true,
+					get: function() {
+						return item.__showNameColor || "none";
+					}
 				},
 				ability: {
 					configurable: true,
@@ -798,7 +864,7 @@ var _abilityCtrl = function(isItem) {
 					var _kv = KV.parse(data);
 					$.each(_kv.value, function (i, unit) {
 						if (typeof  unit.value !== "string") {
-							var _unit = Ability.parse(unit);
+							var _unit = Ability.parse(unit, $scope.isItem);
 							_LOG("Ability", 0, "实体：", _unit._name, _unit);
 
 							$scope.abilityList.push(_unit);
@@ -806,6 +872,8 @@ var _abilityCtrl = function(isItem) {
 					});
 
 					globalContent[_globalListKey] = $scope.abilityList;
+					globalContent[_globalListKey+"_base"] = _kv.base
+					
 					$scope.setAbility($scope.abilityList[0]);
 
 					setTimeout(function () {
@@ -911,7 +979,8 @@ var _abilityCtrl = function(isItem) {
 
 					// Special Abilities
 					$.each(_menuAbility.getSpecialList(), function(i, special) {
-						lang.kv.delete(Language.abilityAttr(_menuAbility._name, special.value[1].key));
+						// lang.kv.delete(Language.abilityAttr(_menuAbility._name, special.value[1].key));
+						lang.kv.delete(Language.abilityAttr(_menuAbility._name, special.key));
 					});
 
 					// Modifiers
@@ -936,7 +1005,7 @@ var _abilityCtrl = function(isItem) {
 		$scope.searchBox = false;
 
 		$scope.searchPress = function($event) {
-			if($event.which === 27) {
+			if($event.which === 27) {//Esc
 				$scope.searchBox = false;
 			}
 		};
@@ -965,7 +1034,10 @@ var _abilityCtrl = function(isItem) {
 		$("#search").on("selected.search", function(e, item) {
 			var _ability = item.ability;
 			if(_ability) {
-				$scope.ability = _ability;
+				//直接选中
+				$scope.setAbility(_ability);
+				$scope.dblclick_locate(_ability);
+				//$scope.ability = _ability;
 				$scope.searchBox = false;
 			}
 		});
@@ -1053,6 +1125,16 @@ var _abilityCtrl = function(isItem) {
 		// ================================================================
 		// =                              UI                              =
 		// ================================================================
+		//双击单位名称的时候，定位树节点
+		$scope.dblclick_locate = function(ability){
+			if(ability){
+				var targetDiv = $("#"+ability._name);
+				var parentDiv = $("#listCntr");
+				if(targetDiv && targetDiv.offset() && parentDiv.offset()){
+					parentDiv.scrollTop(targetDiv.offset().top - parentDiv.offset().top + parentDiv.scrollTop())
+				}
+			}
+		}
 		// List Container layout
 		var winWidth;
 		$(window).on("resize.abilityList", function () {
@@ -1087,14 +1169,14 @@ var _abilityCtrl = function(isItem) {
 		$("#abilityMenu").hide();
 		var _menuAbility;
 		$(document).on("contextmenu.abilityList", "#listCntr .listItem", function (e) {
-			var $menu = $("#abilityMenu").show();
+			/* var $menu = $("#abilityMenu").show();
 			common.ui.offsetWin($menu, {
 				left: e.originalEvent.x,
 				top: e.originalEvent.y
 			});
 
 			_menuAbility = angular.element(this).scope()._ability;
-			refreshMenu("#abilityMenu");
+			refreshMenu("#abilityMenu") */;
 
 			e.preventDefault();
 			return false;

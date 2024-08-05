@@ -41,6 +41,7 @@
 				</a>
 			</div>
 			<div class="ability-cntr-header-desc">
+				<!-- 右上角的三个按钮：技能、语言、检测 -->
 				<ul class="nav nav-pills pull-right">
 					<li class="active">
 						<a data-toggle="tab" class="fa fa-file-code-o" href="[data-id='ability']" id="abilityTab"></a>
@@ -55,11 +56,11 @@
 						<span class="nav-tip">{{::Locale('Inspection')}}</span>
 					</li>
 				</ul>
-
+				<!-- 技能名称和标识 -->
 				<div class="ability-cntr-header-name ability-form">
 					<h1>
 						{{GC.mainLang().kv.get(Language.abilityAttr(ability._name, ""), Config.global.kvCaseSensitive) || Locale('Unnamed')}}
-						<small>
+						<small ng-dblclick="dblclick_locate(ability)">
 							<a ng-click="UI.modal.rename(ability, renameCheck, renameCallback)">
 								<span class="fa fa-edit"></span>
 								{{::Locale('Rename')}}
@@ -68,7 +69,7 @@
 						</small>
 					</h1>
 				</div>
-
+				<!-- 技能注释 -->
 				<div class="ability-form">
 					<span class="ability-tip">{{::Locale('Comment')}}</span>
 					<textarea class="ability-form" ng-model="ability._comment" placeholder="{{::Locale('Comment')}}..."></textarea>
@@ -450,30 +451,36 @@
 								<tr>
 									<th width="70"></th>
 									<th>{{::Locale('Key')}}</th>
-									<th>{{::Locale('Type')}}</th>
+									<!-- <th>{{::Locale('Type')}}</th> -->
 									<th>{{::Locale('Value')}}</th>
 								</tr>
 							</thead>
 							<tbody>
 								<tr ng-repeat="_abilitySpecial in ability.getSpecialList() track by $index">
 									<th class="text-center">
-										<a class="fa fa-trash" ng-click="UI.arrayDelete(_abilitySpecial, ability.kv.get('AbilitySpecial'))"></a> |
+										<!-- <a class="fa fa-trash" ng-click="UI.arrayDelete(_abilitySpecial, ability.kv.get('AbilitySpecial'))"></a> |
 										<a class="fa fa-chevron-up" ng-click="common.array.moveOffset(_abilitySpecial, ability.kv.get('AbilitySpecial'), -1)"></a>
-										<a class="fa fa-chevron-down" ng-click="common.array.moveOffset(_abilitySpecial, ability.kv.get('AbilitySpecial'), 1)"></a>
+										<a class="fa fa-chevron-down" ng-click="common.array.moveOffset(_abilitySpecial, ability.kv.get('AbilitySpecial'), 1)"></a> -->
+										
+										<a class="fa fa-trash" ng-click="UI.arrayDelete(_abilitySpecial, ability.kv.get('AbilityValues'))"></a> |
+										<a class="fa fa-chevron-up" ng-click="common.array.moveOffset(_abilitySpecial, ability.kv.get('AbilityValues'), -1)"></a>
+										<a class="fa fa-chevron-down" ng-click="common.array.moveOffset(_abilitySpecial, ability.kv.get('AbilityValues'), 1)"></a>
 									</th>
 									<td class="ability-form">
-										<input type="text" ng-model="_abilitySpecial.value[1].key" />
+										<!-- <input type="text" ng-model="_abilitySpecial.value[1].key" /> -->
+										<input type="text" ng-model="_abilitySpecial.key" ng-model-options="{updateOn: 'blur'}" />
 									</td>
-									<td class="ability-form">
+									<!-- <td class="ability-form">
 										<select ng-model="_abilitySpecial.value[0].value">
 											<option ng-repeat="type in Ability.AbilitySpecialType track by $index" value="{{::type[0]}}">
 												{{::type[0]}}
 												【{{::Locale(type[0])}}】
 											</option>
 										</select>
-									</td>
+									</td> -->
 									<td class="ability-form">
-										<input type="text" ng-model="_abilitySpecial.value[1].value" />
+										<!-- <input type="text" ng-model="_abilitySpecial.value[1].value" /> -->
+										<input type="text" ng-model="_abilitySpecial.value" ng-model-options="{updateOn: 'blur'}" />
 									</td>
 								</tr>
 								<tr ng-if="ability.getSpecialList().length === 0">
@@ -565,10 +572,16 @@
 										</th>
 									</tr>
 									<tr ng-repeat="_abilitySpecial in ability.getSpecialList() track by $index">
-										<th>{{_abilitySpecial.value[1].key}}</th>
+										<!-- <th>{{_abilitySpecial.value[1].key}}</th>
 										<td>
 											<button class="btn btn-default fa fa-paint-brush color-picker"></button>
 											<input type="text" ng-model="GC.currentLanguage.kv.bind(Language.abilityAttr(ability._name, _abilitySpecial.value[1].key))"
+											       ng-model-options="{getterSetter: true}" class="form-control" />
+										</td> -->
+										<th>{{_abilitySpecial.key}}</th>
+										<td>
+											<button class="btn btn-default fa fa-paint-brush color-picker"></button>
+											<input type="text" ng-model="GC.currentLanguage.kv.bind(Language.abilityAttr(ability._name, _abilitySpecial.key))"
 											       ng-model-options="{getterSetter: true}" class="form-control" />
 										</td>
 									</tr>
@@ -617,8 +630,9 @@
 <div class="top-box" ng-show="searchBox">
 	<div class="row">
 		<div class="col-md-12">
-			<input tipfield type="text" id="search" data-matchfuc="searchMatch" ng-model="searchKey"
-			       class="form-control" placeholder="{{::Locale('Search')}}..." ng-keyup="searchPress($event)">
+		   <!-- tipField是一个自定义的逻辑，在js的component下面-->
+		   <input tipField type="text" id="search" data-matchfuc="searchMatch" ng-model="searchKey" class="form-control" placeholder="{{::Locale('Search')}}..." 
+				ng-keyup="searchPress($event)" ng-blur="searchBox = false;" />
 		</div>
 	</div>
 </div>
@@ -917,7 +931,7 @@
 							<div ng-repeat="img in texturePickerCustomizeList track by $index" class="ability-texture"
 								 ng-mouseenter="texturePickerPreview($event, Config.projectPath + '/resource/flash3/images/' + texturePath + '/' + img)"
 								 ng-mouseleave="texturePickerPreview($event, '')"
-								 ng-click="selectTexture(img)" ng-show="texturePickerMatch(img)">
+								 ng-click="selectTexture(img)" ng-show="texturePickerMatch(img)" title="{{img}}">
 								<img ng-src="{{Config.projectPath + '/resource/flash3/images/' + texturePath + '/' + img}}">
 							</div>
 						</div>

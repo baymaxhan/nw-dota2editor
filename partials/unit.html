@@ -3,7 +3,7 @@
 		<div id="listCntr" class="listCntr noSelect" ui-sortable ng-model="abilityList">
 			<div ng-repeat="_ability in abilityList track by $index" class="listItem"
 			     ng-class="{active: ability == _ability}"
-			     ng-mousedown="setAbilityMouseDown(_ability);">
+			     ng-mousedown="setAbilityMouseDown(_ability);" id="{{_ability._name}}">
 				<p class="title">
 					<span class="fa sm" ng-class="{'fa-asterisk': _ability._changed, 'fa-circle': !_ability._changed}" style="color: {{config.abilities[_ability._name].markColor || '#CCC'}}"></span>
 					<span class="fa fa-cubes sm" ng-if="config.abilities[_ability._name].markUsage === 'dummy'"></span>
@@ -39,7 +39,7 @@
 				<div class="ability-cntr-header-name ability-form">
 					<h1>
 						{{GC.mainLang().kv.get(Language.unitAttr(ability, "")) || Locale('Unnamed')}}
-						<small>
+						<small ng-dblclick="dblclick_locate(ability)">
 							<a ng-click="UI.modal.rename(ability, renameCheck, renameCallback)">
 								<span class="fa fa-edit"></span>
 								{{::Locale('Rename')}}
@@ -198,6 +198,20 @@
 					</div>
 				</div>
 			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- ====================================================================== -->
+<!-- =                               Search                               = -->
+<!-- ====================================================================== -->
+<div class="top-box" ng-show="searchBox">
+	<div class="row">
+		<div class="col-md-12">
+		   <!-- tipField是一个自定义的逻辑，在js的component下面-->
+		   <input tipField type="text" id="search" data-matchfuc="searchMatch" ng-model="searchKey" class="form-control" placeholder="{{::Locale('Search')}}..." 
+				ng-keyup="searchPress($event)" ng-blur="searchBox = false;" />
 		</div>
 	</div>
 </div>

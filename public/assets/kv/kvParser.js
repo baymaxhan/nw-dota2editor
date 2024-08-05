@@ -1,11 +1,13 @@
 'use strict';
 
 (function() {
-	var KV = function(key, value, comment) {
+	var KV = function(key, value, comment,base) {
 		this.key = key || "";
 		this.value = value || "";
 		this.comment = comment || "";
 		this.keep = false;
+		this.saveBlankString = true //默认保存空字符串的值。
+		this.base = base
 
 		return this;
 	};
@@ -94,6 +96,12 @@
 
 			_data += text + "\n";
 		};
+		// base
+		if(this.base && this.base.length > 0) {
+			this.base.forEach(function(line) {
+				_write("#" + line);
+			});
+		}
 
 		// Comment
 		if(this.comment) {
@@ -101,14 +109,16 @@
 				_write("// " + line);
 			});
 		}
-
+		var saveBlank = this.saveBlankString
 		// Key - Value
 		if(this.value === null || this.value === undefined) {
 			// Do nothing
 		} else if(typeof this.value === "string") {
-			_write('"' + this.key + '"	"'
-			+ this.value.replace(/\\"/g, '"').replace(/"/g, '\\"').replace(/\r\n/g, "\\n").replace(/\n/g, "\\n").replace(/\r/g, "\\n")
-			+ '"');
+			if(this.value.replace(/(^s*)|(s*$)/g, "").length > 0 || saveBlank){//空字符串也不处理，主要是因为：以前有一些国际化有问题，现在想删掉，就清空文本，但是实际该国际化并不会删除，因为仍然保存了空值。所以如果是空的，就什么也不写
+				_write('"' + this.key + '"	"'
+				+ this.value.replace(/\\"/g, '"').replace(/"/g, '\\"').replace(/\r\n/g, "\\n").replace(/\n/g, "\\n").replace(/\r/g, "\\n")
+				+ '"');
+			}
 		} else if(this.value.length === 0) {
 			_write('"' + this.key + '"	{}');
 		} else {
@@ -116,7 +126,7 @@
 			_write('{');
 			this.value.forEach(function(subKV) {
 				if(saveFunc && saveFunc(subKV) === false) return;
-
+				subKV.saveBlankString = saveBlank
 				_data = subKV._toString(_data, _lvl + 1, saveFunc) + "\n";
 			});
 			_write('}');
@@ -142,6 +152,7 @@
 	var STATE_VALUE = KV.STATE_VALUE = 4;
 	var STATE_VALUE_END = KV.STATE_VALUE_END = 5;
 	var STATE_VALUE_LIST = KV.STATE_VALUE_LIST = 6;
+	var STATE_BASE = KV.STATE_BASE = 7;
 
 	KV.parse = function(text, startLoc, infoObj) {
 		if(!text) {
@@ -158,6 +169,8 @@
 		var _comment = "";
 		var _key = "";
 		var _value = null;
+		var _base = null;
+		var _baseArray = null;
 
 		if(typeof startLoc === "number") {
 			_startLoc = startLoc;
@@ -203,7 +216,9 @@
 				} else if(_c === '}' && _startLoc !== undefined) {
 					_endLoc = _i;
 					_breakFor = true;
-				} else {
+				} else if(_c === '#' && text[_i+1] === 'b' && text[_i+2] === 'a' && text[_i+3] === 's' && text[_i+4] === 'e') {
+					_setState(STATE_BASE)
+				}else {
 					console.warn("[STATE_NORMAL] Not match:'" + _c + "', index:", _i);
 					infoObj.warn.push("[STATE_NORMAL] Not match:'" + _c + "', index:" + _i);
 				}
@@ -290,12 +305,35 @@
 					_breakFor = true;
 				}
 				break;
+			case STATE_BASE:
+				if(KV.inArray(_c, ['\n','\r']) !== -1) {
+					//一个引用结束了，回到之前的状态，一般来说base都在最前面，这里就不搞那么复杂了
+					_setState(_preState);
+					if(_base){
+						if(_baseArray){
+							_baseArray.push(_base)
+						}else{
+							_baseArray = new Array()
+							_baseArray.push(_base)
+						}
+						
+						_base = null;
+					}
+					
+				}else{
+					if(_base == null){
+						_base = "";
+					}
+					_base += _c;
+				}
+				
+				break;
 			}
 
 			if(_breakFor) break;
 		}
 
-		var _kv = new KV(_key, _value, _comment.replace(/[\r\n]+$/, ""));
+		var _kv = new KV(_key, _value, _comment.replace(/[\r\n]+$/, ""),_baseArray);
 
 		if(_startLoc === undefined) {
 			return _kv;
