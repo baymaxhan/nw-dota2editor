@@ -197,6 +197,8 @@ var _abilityCtrl = function(isItem) {
 			if(!textureName) return _iconEmpty;
 
 			if(!_iconCache[textureName]) {
+				console.log("project path = " + project);
+
 				if (isItem) {
 					_iconCache[textureName] = [
 						globalContent.project + "/resource/flash3/images/items/" + textureName.replace(/^item_/, "") + ".png",
